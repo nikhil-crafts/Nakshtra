@@ -25,7 +25,6 @@ export interface WeatherCard {
   icon: string;
   averageValue: string;
   extremeRisk: WeatherRisk;
-  details: string[];
 }
 
 export interface UserPreferences {

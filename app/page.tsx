@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { useLoadScript } from "@react-google-maps/api";
+
 import {
   Popover,
   PopoverTrigger,
@@ -22,6 +23,8 @@ import { cn } from "@/lib/utils";
 import type { EventData } from "@/types/weather";
 import { useRouter } from "next/navigation";
 import MapPicker from "@/components/MapPicker";
+
+
 
 interface Thresholds {
   hot?: number;
@@ -49,8 +52,36 @@ const Landing = () => {
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [thresholds, setThresholds] = useState<Thresholds>({});
   const [userThresholds, setUserThresholds] = useState<Thresholds | null>(null);
+  const [submit, setSubmit] = useState(false)
   const router = useRouter();
 
+  const libraries: ("places")[] = ["places"];
+
+  const { isLoaded } = useLoadScript({
+  googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY!,
+  libraries,
+});
+
+  const inputRef = useRef<HTMLInputElement | null>(null);
+  const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
+
+  useEffect(() => {
+    if (!inputRef.current || !window.google) return;
+
+    autocompleteRef.current = new google.maps.places.Autocomplete(inputRef.current, {
+      fields: ["geometry", "formatted_address"],
+      types:["geocode"]
+    });
+
+    autocompleteRef.current.addListener("place_changed", () => {
+      const place = autocompleteRef.current!.getPlace();
+      if (!place.geometry || !place.geometry.location) return;
+
+      const lat = place.geometry.location.lat();
+      const lng = place.geometry.location.lng();
+      setEventData({ ...eventData, location: place.formatted_address!, lat, lng });
+    });
+  }, [isLoaded]);
   // Load saved thresholds (if user is logged in)
   useEffect(() => {
     async function fetchUserPreferences() {
@@ -71,6 +102,7 @@ const Landing = () => {
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
+    setSubmit(true)
     e.preventDefault();
     if (!eventData.location || !eventData.date) return;
 
@@ -121,54 +153,32 @@ const Landing = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-accent/20 flex items-center justify-center p-4">
-      <div className="w-full max-w-6xl grid grid-cols-1 md:grid-cols-2 gap-8">
-        {/* Left: Form */}
-        <div className="space-y-8">
-          {/* Header */}
-          <div className="text-center space-y-4">
-            <div className="mx-auto w-16 h-16 bg-gradient-primary rounded-2xl flex items-center justify-center shadow-[var(--shadow-elevated)]">
-              <CloudRainIcon className="w-8 h-8 text-white" />
-            </div>
-            <div className="space-y-2">
-              <h1 className="text-3xl font-bold tracking-tight text-foreground">
-                Event Weather Risk
-              </h1>
-              <p className="text-muted-foreground">
-                Get weather risk insights for your upcoming event
-              </p>
-            </div>
-          </div>
-
-          {/* Form Card */}
-          <Card className="weather-card border-0 shadow-2xl">
+      <div className="w-full max-w-6xl grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-25">
+        <div className="space-y-8 mt-11">
+          <Card className="weather-card border-0 shadow-2xl h-full">
             <CardHeader className="text-center pb-6">
-              <CardTitle className="text-xl">Plan Your Event</CardTitle>
+              <CardTitle className="text-3xl">Event Weather Risk</CardTitle>
               <CardDescription>
-                Enter your event details to get started
+                Get weather risk insights for your upcoming event
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <form onSubmit={handleSubmit} className="space-y-6">
+              <form onSubmit={handleSubmit} className="space-y-10">
                 {/* Location Input */}
-                <div className="space-y-2">
+                <div className="space-y-3">
                   <label htmlFor="location" className="text-sm font-medium">
                     Event Location
                   </label>
-                  <div className="relative">
-                    <MapPinIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                    <Input
-                      id="location"
-                      type="text"
-                      placeholder="Enter city or address"
-                      value={eventData.location || ""}
-                      onChange={(e) =>
-                        setEventData({ ...eventData, location: e.target.value })
-                      }
-                      className="pl-10 h-12 text-base rounded-xl border-border/50 focus:border-primary"
-                    />
-                  </div>
-                </div>
+                  <input
+                    ref={inputRef}
+                    type="text"
+                    placeholder="Search location..."
+                    className="w-full h-12 px-4 border rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    value={eventData.location || ""}
+                    onChange={(e) => setEventData({ ...eventData, location: e.target.value })}
+                  />
 
+                </div>
                 {/* Date Picker */}
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Event Date</label>
@@ -211,7 +221,7 @@ const Landing = () => {
                   disabled={!isFormValid}
                   className="w-full h-12 text-base font-medium rounded-xl gradient-primary border-0 hover:shadow-[var(--shadow-risk)] transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Get Weather Risk Assessment
+                  {submit ? "Fetching Data..." : "Get Weather Risk Assessment"}
                 </Button>
               </form>
             </CardContent>
@@ -219,7 +229,7 @@ const Landing = () => {
         </div>
 
         {/* Right: Map */}
-        <div className="hidden md:block">
+        <div className="md:block md:pt-10">
           <MapPicker
             location={eventData.location || ""}
             onLocationChange={handleLocationChange}

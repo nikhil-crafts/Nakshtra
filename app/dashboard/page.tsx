@@ -49,15 +49,12 @@ const Dashboard = () => {
             type: 'rain',
             title: 'Rain Risk',
             icon: 'CloudRainIcon',
-            averageValue: `${apiResp.average_conditions.rainfall_mm} mm expected`,
+            averageValue: `${apiResp.average_conditions.rainfall_mm} mm`,
             extremeRisk: {
               level: apiResp.extreme_weather_risks.very_wet.risk_level.toLowerCase(),
               value: apiResp.extreme_weather_risks.very_wet.probability_percent,
               description: `${apiResp.extreme_weather_risks.very_wet.probability_percent}% chance of heavy rain`
             },
-            details: [
-              'hello'
-            ]
           },
           {
             id: 'temp',
@@ -70,10 +67,6 @@ const Dashboard = () => {
               value: apiResp.extreme_weather_risks.very_hot.probability_percent,
               description: `${apiResp.extreme_weather_risks.very_hot.probability_percent}% chance of extreme heat`
             },
-            details: [
-              `Average Temp: ${apiResp.average_conditions.temperature_C}°C`,
-              `Heat Risk: ${apiResp.extreme_weather_risks.very_hot.risk_level}`
-            ]
           },
           {
             id: 'wind',
@@ -86,29 +79,25 @@ const Dashboard = () => {
               value: apiResp.extreme_weather_risks.very_windy.probability_percent,
               description: `${apiResp.extreme_weather_risks.very_windy.probability_percent}% chance of strong winds`
             },
-            details: [
-              `Average Wind: ${apiResp.average_conditions.wind_speed_kmh} km/h`,
-              `Wind Risk: ${apiResp.extreme_weather_risks.very_windy.risk_level}`
-            ]
           },
-          {
-            id: 'anomaly',
-            type: 'anomaly',
-            title: 'Weather Anomalies',
-            icon: 'TrendingUpIcon',
-            averageValue: 'Check extremes',
-            extremeRisk: {
-              level: 'low',
-              value: 0,
-              description: 'Relative risks compared to historical averages'
-            },
-            details: [
-              `Hotter than usual: ${apiResp.relative_weather_risks.hotter_than_usual.probability_percent}%`,
-              `Colder than usual: ${apiResp.relative_weather_risks.colder_than_usual.probability_percent}%`,
-              `Windier than usual: ${apiResp.relative_weather_risks.windier_than_usual.probability_percent}%`,
-              `Wetter than usual: ${apiResp.relative_weather_risks.wetter_than_usual.probability_percent}%`
-            ]
-          }
+          // {
+          //   id: 'anomaly',
+          //   type: 'anomaly',
+          //   title: 'Weather Anomalies',
+          //   icon: 'TrendingUpIcon',
+          //   averageValue: 'Check extremes',
+          //   extremeRisk: {
+          //     level: 'low',
+          //     value: 0,
+          //     description: 'Relative risks compared to historical averages'
+          //   },
+          //   details: [
+          //     `Hotter than usual: ${apiResp.relative_weather_risks.hotter_than_usual.probability_percent}%`,
+          //     `Colder than usual: ${apiResp.relative_weather_risks.colder_than_usual.probability_percent}%`,
+          //     `Windier than usual: ${apiResp.relative_weather_risks.windier_than_usual.probability_percent}%`,
+          //     `Wetter than usual: ${apiResp.relative_weather_risks.wetter_than_usual.probability_percent}%`
+          //   ]
+          // }
         ];
 
         setWeatherCards(cards);
@@ -121,7 +110,7 @@ const Dashboard = () => {
       case 'low': return 'risk-low';
       case 'medium': return 'risk-medium';
       case 'high': return 'risk-high';
-      case 'very high': return 'risk-high'; // map Very High -> high for color
+      case 'very high': return 'risk-high';
       default: return 'risk-low';
     }
   };
@@ -194,12 +183,12 @@ const Dashboard = () => {
 
         {/* Weather Cards */}
         <Tabs defaultValue="rain" className="w-full">
-          <TabsList className="grid w-full grid-cols-4 mb-6 h-auto p-1 bg-card rounded-xl">
+          <TabsList className="grid w-full grid-cols-3 mb-6 h-auto p-1 bg-card rounded-xl">
             {weatherCards.map((card) => (
               <TabsTrigger
                 key={card.id}
                 value={card.id}
-                className="flex flex-col items-center gap-2 py-3 px-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-lg transition-all"
+                className="flex flex-col items-center  gap-2 py-3 px-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-lg transition-all"
               >
                 {getWeatherIcon(card.type)}
                 <span className="text-xs font-medium hidden sm:block">{card.title}</span>
@@ -208,66 +197,56 @@ const Dashboard = () => {
           </TabsList>
 
           {weatherCards.map((card) => (
-            <TabsContent key={card.id} value={card.id} className="mt-0">
+            <TabsContent key={card.id} value={card.id} className="mt-0 ">
               <Card className="weather-card">
                 <CardHeader className="pb-4">
                   <CardTitle className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       {getWeatherIcon(card.type)}
-                      <span>{card.title}</span>
+                      <span className="text-2xl">{card.title}</span>
                     </div>
 
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-6">
                   {/* Average Value */}
-                  <div className="flex justify-start">
-                    <div style={{ padding: 20 }}>
-                      <CircularProgress progress={card.extremeRisk.value} size={150} strokeWidth={15}  />
+                  <div className="grid grid-cols-2 gap-10">
+                    <div className="flex flex-col">
+                      <div style={{ padding: 20 }}>
+                        <CircularProgress progress={card.extremeRisk.value} size={150} strokeWidth={15} />
+                      </div>
+                      <div className="flex justify-center flex-col ">
+                        <Button
+                          className={cn(
+                            getRiskColor(card.extremeRisk),
+                            "px-3 py-1 text-xl w-50 font-semibold rounded-full"
+                          )}
+                        >
+                          {card.extremeRisk.level.toUpperCase()}
+                        </Button>
+                      </div>
                     </div>
                     <div>
-                      <Button
-                        className={cn(
-                          getRiskColor(card.extremeRisk),
-                          "px-3 py-1 text-xs font-semibold rounded-full"
-                        )}
-                      >
-                        {card.extremeRisk.level.toUpperCase()} RISK
-                      </Button>
-                      <p className="text-muted-foreground">{card.averageValue}</p>
+                      <CardTitle className="flex justify-end flex-col space-y-5">
+                        <h1 className="text-2xl text-center">Expected {card.type}</h1>
+                        <p className="text-2xl text-bold text-muted-foreground text-center">{card.averageValue}</p>
+                      </CardTitle>
+
                     </div>
                   </div>
 
-                  {/* Risk Indicator */}
-                  <div className="space-y-3">
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm font-medium">Risk Level</span>
-                      <span className="text-sm text-muted-foreground">{card.extremeRisk.value}%</span>
-                    </div>
-                    <div className="w-full bg-muted rounded-full h-3 overflow-hidden">
-                      <div
-                        className={cn("risk-indicator h-full", getRiskColor(card.extremeRisk))}
-                        style={{ width: `${card.extremeRisk.value}%` }}
-                      />
-                    </div>
-                    <p className="text-sm text-muted-foreground text-center">
-                      {card.extremeRisk.description}
-                    </p>
-                  </div>
-
-                  {/* Details */}
+                </CardContent>
+              </Card>
+              <Card className="mt-5">
+                <CardContent>
                   <div className="space-y-2">
                     <h4 className="text-sm font-medium text-foreground">Key Insights</h4>
                     <ul className="space-y-2">
-                      {card.details.map((detail, index) => (
-                        <li key={index} className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <div className="w-1.5 h-1.5 rounded-full bg-primary flex-shrink-0" />
-                          {detail}
-                        </li>
-                      ))}
+                      
                     </ul>
                   </div>
                 </CardContent>
+
               </Card>
             </TabsContent>
           ))}

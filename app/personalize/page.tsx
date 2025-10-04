@@ -1,14 +1,13 @@
 "use client"
 
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Slider } from "@/components/ui/slider";
-import { 
-  ThermometerIcon, 
-  WindIcon, 
-  CloudRainIcon, 
+import {
+  ThermometerIcon,
+  WindIcon,
+  CloudRainIcon,
   SnowflakeIcon,
   ArrowLeftIcon,
   SaveIcon
@@ -34,14 +33,11 @@ const Personalize = () => {
     }
   }, []);
 
-//   const handleSave = () => {
-//     sessionStorage.setItem('userPreferences', JSON.stringify(preferences));
-//     toast({
-//       title: "Preferences Saved",
-//       description: "Your risk assessment has been personalized.",
-//     });
-//     navigate.push('/dashboard');
-//   };
+  const handleSave = () => {
+    sessionStorage.setItem('userPreferences', JSON.stringify(preferences));
+
+    navigate.push('/dashboard');
+  };
 
   const sliderConfigs = [
     {
@@ -152,7 +148,7 @@ const Personalize = () => {
                 <div className="space-y-4">
                   <Slider
                     value={[config.value]}
-                    onValueChange={(value) => 
+                    onValueChange={(value) =>
                       setPreferences(prev => ({
                         ...prev,
                         [config.id]: value[0]
@@ -175,8 +171,8 @@ const Personalize = () => {
 
         {/* Save Button */}
         <div className="mt-8 text-center">
-          <Button 
-            // onClick={handleSave}
+          <Button
+            onClick={handleSave}
             size="lg"
             className="gradient-primary border-0 rounded-xl px-8 h-12 text-base font-medium hover:shadow-[var(--shadow-risk)] transition-all duration-300"
           >
