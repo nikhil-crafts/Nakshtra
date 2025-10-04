@@ -1,11 +1,10 @@
 "use client"
 
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Popover,PopoverTrigger,PopoverContent } from "@/components/ui/popover";
-import { Calendar } from "@/components/ui/calendar"; // Replace with the correct path to your Calendar component
+import { Calendar } from "@/components/ui/calendar";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { CalendarIcon, MapPinIcon, CloudRainIcon } from "lucide-react";
 import { format } from "date-fns";
@@ -119,11 +118,6 @@ const Landing = () => {
             </form>
           </CardContent>
         </Card>
-
-        {/* Footer */}
-        <p className="text-center text-sm text-muted-foreground">
-          Powered by advanced weather forecasting
-        </p>
       </div>
     </div>
   );
