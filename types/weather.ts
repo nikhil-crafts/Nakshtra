@@ -1,11 +1,19 @@
 export interface EventData {
   location: string;
-  date: Date;
-  name?: string;
+  date?: Date;
+  lat?: number;
+  lng?: number;
+  thresholds?: {
+    hot?: number;
+    cold?: number;
+    windy?: number;
+    rain?: number;
+  };
+  apiResponse?: any; // Add this line
 }
 
 export interface WeatherRisk {
-  level: 'low' | 'medium' | 'high';
+  level: 'low' | 'medium' | 'high'| 'very high';
   value: number;
   description: string;
 }

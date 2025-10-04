@@ -91,18 +91,6 @@ const Personalize = () => {
       step: 5,
       unit: 'mm',
       color: 'bg-weather-rain'
-    },
-    {
-      id: 'snowTolerance',
-      title: 'Snow Tolerance',
-      description: 'Maximum snowfall you can manage',
-      icon: <SnowflakeIcon className="w-5 h-5 text-muted-foreground" />,
-      value: preferences.snowTolerance,
-      min: 0,
-      max: 30,
-      step: 2,
-      unit: 'cm',
-      color: 'bg-muted-foreground'
     }
   ];
 

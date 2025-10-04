@@ -1,128 +1,233 @@
-"use client"
+"use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Popover,PopoverTrigger,PopoverContent } from "@/components/ui/popover";
+import {
+  Popover,
+  PopoverTrigger,
+  PopoverContent,
+} from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { CalendarIcon, MapPinIcon, CloudRainIcon } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import type { EventData } from "@/types/weather";
 import { useRouter } from "next/navigation";
+import MapPicker from "@/components/MapPicker";
+
+interface Thresholds {
+  hot?: number;
+  cold?: number;
+  windy?: number;
+  rain?: number;
+}
+
+const globalThresholds: Thresholds = {
+  hot: 35,
+  cold: 5,
+  windy: 30,
+  rain: 20,
+};
 
 const Landing = () => {
-  const [eventData, setEventData] = useState<Partial<EventData>>({
+  const [eventData, setEventData] = useState<
+    Partial<EventData> & { lat?: number; lng?: number }
+  >({
     location: "",
     date: undefined,
+    lat: undefined,
+    lng: undefined,
   });
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
-  const navigate = useRouter();
+  const [thresholds, setThresholds] = useState<Thresholds>({});
+  const [userThresholds, setUserThresholds] = useState<Thresholds | null>(null);
+  const router = useRouter();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // Load saved thresholds (if user is logged in)
+  useEffect(() => {
+    async function fetchUserPreferences() {
+      try {
+        const res = await fetch("/api/user/preferences"); // returns user's saved thresholds
+        if (res.ok) {
+          const data = await res.json();
+          if (data) {
+            setUserThresholds(data);
+            setThresholds(data); // prefill thresholds if user has preferences
+          }
+        }
+      } catch (err) {
+        console.error("Error fetching user preferences:", err);
+      }
+    }
+    fetchUserPreferences();
+  }, []);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!eventData.location || !eventData.date) return;
-    
-    // Store event data in sessionStorage for demo purposes
-    sessionStorage.setItem('eventData', JSON.stringify(eventData));
-    navigate.push('/dashboard');
+
+    // Determine which thresholds to use
+    const thresholdsToUse = userThresholds || thresholds || globalThresholds;
+
+    // Save thresholds temporarily to sessionStorage
+    sessionStorage.setItem("thresholds", JSON.stringify(thresholdsToUse));
+
+    const params = new URLSearchParams({
+      date_of_trip: format(eventData.date!, "yyyyMMdd"),
+      lat: (eventData.lat || "").toString(),
+      lon: (eventData.lng || "").toString(),
+      hot: thresholdsToUse.hot?.toString() || "",
+      cold: thresholdsToUse.cold?.toString() || "",
+      windy: thresholdsToUse.windy?.toString() || "",
+      rain: thresholdsToUse.rain?.toString() || "",
+    });
+
+    try {
+      const res = await fetch(`http://localhost:5000/weather_risk?${params}`);
+      const data = await res.json();
+
+      // Store event data for dashboard
+      sessionStorage.setItem(
+        "eventData",
+        JSON.stringify({
+          ...eventData,
+          thresholds: thresholdsToUse,
+          apiResponse: data,
+        })
+      );
+
+      router.push("/dashboard");
+    } catch (err) {
+      console.error("Error fetching weather:", err);
+    }
+  };
+
+  const handleLocationChange = (
+    location: string,
+    coords: { lat: number; lng: number }
+  ) => {
+    setEventData({ ...eventData, location, lat: coords.lat, lng: coords.lng });
   };
 
   const isFormValid = eventData.location && eventData.date;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-accent/20 flex items-center justify-center p-4">
-      <div className="w-full max-w-md space-y-8">
-        {/* Header */}
-        <div className="text-center space-y-4">
-          <div className="mx-auto w-16 h-16 bg-gradient-primary rounded-2xl flex items-center justify-center shadow-[var(--shadow-elevated)]">
-            <CloudRainIcon className="w-8 h-8 text-white" />
+      <div className="w-full max-w-6xl grid grid-cols-1 md:grid-cols-2 gap-8">
+        {/* Left: Form */}
+        <div className="space-y-8">
+          {/* Header */}
+          <div className="text-center space-y-4">
+            <div className="mx-auto w-16 h-16 bg-gradient-primary rounded-2xl flex items-center justify-center shadow-[var(--shadow-elevated)]">
+              <CloudRainIcon className="w-8 h-8 text-white" />
+            </div>
+            <div className="space-y-2">
+              <h1 className="text-3xl font-bold tracking-tight text-foreground">
+                Event Weather Risk
+              </h1>
+              <p className="text-muted-foreground">
+                Get weather risk insights for your upcoming event
+              </p>
+            </div>
           </div>
-          <div className="space-y-2">
-            <h1 className="text-3xl font-bold tracking-tight text-foreground">
-              Event Weather Risk
-            </h1>
-            <p className="text-muted-foreground">
-              Get weather risk insights for your upcoming event
-            </p>
-          </div>
+
+          {/* Form Card */}
+          <Card className="weather-card border-0 shadow-2xl">
+            <CardHeader className="text-center pb-6">
+              <CardTitle className="text-xl">Plan Your Event</CardTitle>
+              <CardDescription>
+                Enter your event details to get started
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleSubmit} className="space-y-6">
+                {/* Location Input */}
+                <div className="space-y-2">
+                  <label htmlFor="location" className="text-sm font-medium">
+                    Event Location
+                  </label>
+                  <div className="relative">
+                    <MapPinIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <Input
+                      id="location"
+                      type="text"
+                      placeholder="Enter city or address"
+                      value={eventData.location || ""}
+                      onChange={(e) =>
+                        setEventData({ ...eventData, location: e.target.value })
+                      }
+                      className="pl-10 h-12 text-base rounded-xl border-border/50 focus:border-primary"
+                    />
+                  </div>
+                </div>
+
+                {/* Date Picker */}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Event Date</label>
+                  <Popover
+                    open={isCalendarOpen}
+                    onOpenChange={setIsCalendarOpen}
+                  >
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className={cn(
+                          "w-full h-12 justify-start text-left font-normal rounded-xl border-border/50 hover:border-primary",
+                          !eventData.date && "text-muted-foreground"
+                        )}
+                      >
+                        <CalendarIcon className="mr-3 h-4 w-4" />
+                        {eventData.date
+                          ? format(eventData.date, "PPP")
+                          : "Select a date"}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={eventData.date}
+                        onSelect={(date) => {
+                          setEventData({ ...eventData, date });
+                          setIsCalendarOpen(false);
+                        }}
+                        disabled={(date) => date < new Date()}
+                        initialFocus
+                        className="p-3 pointer-events-auto"
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+                {/* Submit Button */}
+                <Button
+                  type="submit"
+                  disabled={!isFormValid}
+                  className="w-full h-12 text-base font-medium rounded-xl gradient-primary border-0 hover:shadow-[var(--shadow-risk)] transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Get Weather Risk Assessment
+                </Button>
+              </form>
+            </CardContent>
+          </Card>
         </div>
 
-        {/* Form Card */}
-        <Card className="weather-card border-0 shadow-2xl">
-          <CardHeader className="text-center pb-6">
-            <CardTitle className="text-xl">Plan Your Event</CardTitle>
-            <CardDescription>Enter your event details to get started</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-6">
-              {/* Location Input */}
-              <div className="space-y-2">
-                <label htmlFor="location" className="text-sm font-medium">
-                  Event Location
-                </label>
-                <div className="relative">
-                  <MapPinIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                  <Input
-                    id="location"
-                    type="text"
-                    placeholder="Enter city or address"
-                    value={eventData.location}
-                    onChange={(e) => setEventData({ ...eventData, location: e.target.value })}
-                    className="pl-10 h-12 text-base rounded-xl border-border/50 focus:border-primary"
-                  />
-                </div>
-              </div>
-
-              {/* Date Picker */}
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Event Date</label>
-                <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className={cn(
-                        "w-full h-12 justify-start text-left font-normal rounded-xl border-border/50 hover:border-primary",
-                        !eventData.date && "text-muted-foreground"
-                      )}
-                    >
-                      <CalendarIcon className="mr-3 h-4 w-4" />
-                      {eventData.date ? format(eventData.date, "PPP") : "Select a date"}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={eventData.date}
-                      onSelect={(date) => {
-                        setEventData({ ...eventData, date });
-                        setIsCalendarOpen(false);
-                      }}
-                      disabled={(date) => date < new Date()}
-                      initialFocus
-                      className="p-3 pointer-events-auto"
-                    />
-                  </PopoverContent>
-                </Popover>
-              </div>
-
-              {/* Submit Button */}
-              <Button
-                type="submit"
-                disabled={!isFormValid}
-                className="w-full h-12 text-base font-medium rounded-xl gradient-primary border-0 hover:shadow-[var(--shadow-risk)] transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Get Weather Risk Assessment
-              </Button>
-            </form>
-          </CardContent>
-        </Card>
+        {/* Right: Map */}
+        <div className="hidden md:block">
+          <MapPicker
+            location={eventData.location || ""}
+            onLocationChange={handleLocationChange}
+          />
+        </div>
       </div>
     </div>
   );
 };
 
 export default Landing;
-
-

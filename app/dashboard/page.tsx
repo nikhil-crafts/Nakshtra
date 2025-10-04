@@ -7,14 +7,13 @@ import {
   CloudRainIcon,
   ThermometerIcon,
   WindIcon,
-  SnowflakeIcon,
   TrendingUpIcon,
   MapPinIcon,
   CalendarIcon,
   SettingsIcon,
   ArrowLeftIcon
 } from "lucide-react";
-import { format } from "date-fns";
+import { format, parseISO } from "date-fns";
 import { cn } from "../../lib/utils";
 import type { EventData, WeatherCard, WeatherRisk } from "../../types/weather";
 import { useRouter } from "next/navigation";
@@ -22,60 +21,107 @@ import CircularProgress from "@/components/circularProgress";
 
 const Dashboard = () => {
   const [eventData, setEventData] = useState<EventData | null>(null);
+  const [weatherCards, setWeatherCards] = useState<WeatherCard[]>([]);
   const [isPersonalized, setIsPersonalized] = useState(false);
   const navigate = useRouter();
 
   useEffect(() => {
-    const personalizedData = sessionStorage.getItem('userPreferences');
+    // Load event data & thresholds from sessionStorage
+    const storedData = sessionStorage.getItem("eventData");
+    const personalizedData = sessionStorage.getItem("userPreferences");
 
     setIsPersonalized(!!personalizedData);
-  }, [navigate]);
 
-  // Mock weather data
-  const weatherCards: WeatherCard[] = [
-    {
-      id: 'rain',
-      type: 'rain',
-      title: 'Rain Risk',
-      icon: 'CloudRainIcon',
-      averageValue: '15mm expected',
-      extremeRisk: { level: 'medium', value: 35, description: '35% chance of heavy rain' },
-      details: ['Light showers likely', 'Umbrella recommended', 'Indoor backup advised']
-    },
-    {
-      id: 'temp',
-      type: 'temperature',
-      title: 'Temperature',
-      icon: 'ThermometerIcon',
-      averageValue: '24°C / 75°F',
-      extremeRisk: { level: 'low', value: 15, description: 'Low heat stress risk' },
-      details: ['Comfortable range', 'Feels like 26°C', 'No extreme heat expected']
-    },
-    {
-      id: 'wind',
-      type: 'wind',
-      title: 'Wind Conditions',
-      icon: 'WindIcon',
-      averageValue: '12 km/h',
-      extremeRisk: { level: 'low', value: 10, description: 'Minimal wind disruption' },
-      details: ['Light breeze', 'No gusty conditions', 'Good for outdoor setup']
-    },
-    {
-      id: 'anomaly',
-      type: 'anomaly',
-      title: 'Weather Anomalies',
-      icon: 'TrendingUpIcon',
-      averageValue: '2°C warmer',
-      extremeRisk: { level: 'low', value: 20, description: 'Slightly above average' },
-      details: ['Warmer than usual', 'Normal humidity', 'Typical conditions']
+    if (storedData) {
+      const parsedData: EventData = JSON.parse(storedData);
+      setEventData({
+        ...parsedData,
+        date: parsedData.date ? new Date(parsedData.date) : undefined
+      });
+
+      const apiResp = parsedData.apiResponse;
+
+      if (apiResp) {
+        // Transform API response to WeatherCard[]
+        const cards: WeatherCard[] = [
+          {
+            id: 'rain',
+            type: 'rain',
+            title: 'Rain Risk',
+            icon: 'CloudRainIcon',
+            averageValue: `${apiResp.average_conditions.rainfall_mm} mm expected`,
+            extremeRisk: {
+              level: apiResp.extreme_weather_risks.very_wet.risk_level.toLowerCase(),
+              value: apiResp.extreme_weather_risks.very_wet.probability_percent,
+              description: `${apiResp.extreme_weather_risks.very_wet.probability_percent}% chance of heavy rain`
+            },
+            details: [
+              'hello'
+            ]
+          },
+          {
+            id: 'temp',
+            type: 'temperature',
+            title: 'Temperature',
+            icon: 'ThermometerIcon',
+            averageValue: `${apiResp.average_conditions.temperature_C}°C`,
+            extremeRisk: {
+              level: apiResp.extreme_weather_risks.very_hot.risk_level.toLowerCase(),
+              value: apiResp.extreme_weather_risks.very_hot.probability_percent,
+              description: `${apiResp.extreme_weather_risks.very_hot.probability_percent}% chance of extreme heat`
+            },
+            details: [
+              `Average Temp: ${apiResp.average_conditions.temperature_C}°C`,
+              `Heat Risk: ${apiResp.extreme_weather_risks.very_hot.risk_level}`
+            ]
+          },
+          {
+            id: 'wind',
+            type: 'wind',
+            title: 'Wind Conditions',
+            icon: 'WindIcon',
+            averageValue: `${apiResp.average_conditions.wind_speed_kmh} km/h`,
+            extremeRisk: {
+              level: apiResp.extreme_weather_risks.very_windy.risk_level.toLowerCase(),
+              value: apiResp.extreme_weather_risks.very_windy.probability_percent,
+              description: `${apiResp.extreme_weather_risks.very_windy.probability_percent}% chance of strong winds`
+            },
+            details: [
+              `Average Wind: ${apiResp.average_conditions.wind_speed_kmh} km/h`,
+              `Wind Risk: ${apiResp.extreme_weather_risks.very_windy.risk_level}`
+            ]
+          },
+          {
+            id: 'anomaly',
+            type: 'anomaly',
+            title: 'Weather Anomalies',
+            icon: 'TrendingUpIcon',
+            averageValue: 'Check extremes',
+            extremeRisk: {
+              level: 'low',
+              value: 0,
+              description: 'Relative risks compared to historical averages'
+            },
+            details: [
+              `Hotter than usual: ${apiResp.relative_weather_risks.hotter_than_usual.probability_percent}%`,
+              `Colder than usual: ${apiResp.relative_weather_risks.colder_than_usual.probability_percent}%`,
+              `Windier than usual: ${apiResp.relative_weather_risks.windier_than_usual.probability_percent}%`,
+              `Wetter than usual: ${apiResp.relative_weather_risks.wetter_than_usual.probability_percent}%`
+            ]
+          }
+        ];
+
+        setWeatherCards(cards);
+      }
     }
-  ];
+  }, [navigate]);
 
   const getRiskColor = (risk: WeatherRisk) => {
     switch (risk.level) {
       case 'low': return 'risk-low';
       case 'medium': return 'risk-medium';
       case 'high': return 'risk-high';
+      case 'very high': return 'risk-high'; // map Very High -> high for color
       default: return 'risk-low';
     }
   };
@@ -85,11 +131,14 @@ const Dashboard = () => {
       case 'rain': return <CloudRainIcon className="weather-icon" />;
       case 'temperature': return <ThermometerIcon className="weather-icon" />;
       case 'wind': return <WindIcon className="weather-icon" />;
-      case 'snow': return <SnowflakeIcon className="weather-icon" />;
       case 'anomaly': return <TrendingUpIcon className="weather-icon" />;
       default: return <CloudRainIcon className="weather-icon" />;
     }
   };
+
+  if (!eventData || weatherCards.length === 0) {
+    return <CircularProgress progress={50} size={150} strokeWidth={15} />; // loading state
+  }
 
 
   return (
@@ -174,7 +223,7 @@ const Dashboard = () => {
                   {/* Average Value */}
                   <div className="flex justify-start">
                     <div style={{ padding: 20 }}>
-                      <CircularProgress progress={50} size={150} strokeWidth={15}  />
+                      <CircularProgress progress={card.extremeRisk.value} size={150} strokeWidth={15}  />
                     </div>
                     <div>
                       <Button
