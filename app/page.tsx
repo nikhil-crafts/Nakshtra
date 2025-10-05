@@ -169,10 +169,17 @@ const Landing = () => {
   const isFormValid = eventData.location && eventData.date;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-accent/20 flex items-center justify-center p-4">
+    <div className="min-h-screen flex items-center justify-center p-4">
+      <div className="absolute inset-0 -z-10">
+        <img
+          src="/asman.jpg"
+          alt="Background"
+          className="w-full h-full object-cover"
+        />
+      </div>
       <div className="w-full max-w-6xl grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-25">
-        <div className="space-y-8 mt-11">
-          <Card className="weather-card border-0 shadow-2xl h-full">
+        <div className="space-y-8 bg-transparent mt-11">
+          <Card className="weather-card border-0 shadow-2xl h-full backdrop-blur-3xl ">
             <CardHeader className="text-center pb-6">
               <CardTitle className="text-3xl">Event Weather Risk</CardTitle>
               <CardDescription>
