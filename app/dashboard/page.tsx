@@ -34,6 +34,7 @@ const Dashboard = () => {
   const [weatherCards, setWeatherCards] = useState<WeatherCard[]>([]);
   const [isPersonalized, setIsPersonalized] = useState(false);
   const navigate = useRouter();
+  const [insights, setInsights] = useState<string>("");
 
   useEffect(() => {
     const storedData = sessionStorage.getItem("eventData");
@@ -72,7 +73,7 @@ const Dashboard = () => {
             averageValue: `${apiResp.average_conditions.temperature_C}°C`,
             extremeRisk: [
               {
-                type:"hot",
+                type: "hot",
                 level:
                   apiResp.extreme_weather_risks.very_hot.risk_level.toLowerCase(),
                 value:
@@ -80,7 +81,7 @@ const Dashboard = () => {
                 description: `${apiResp.extreme_weather_risks.very_hot.probability_percent}% chance of extreme heat`,
               },
               {
-                type:'cold',
+                type: "cold",
                 level:
                   apiResp.extreme_weather_risks.very_cold.risk_level.toLowerCase(),
                 value:
@@ -109,6 +110,49 @@ const Dashboard = () => {
       }
     }
   }, [navigate]);
+
+  useEffect(() => {
+    if (!weatherCards.length) return;
+
+    const fetchInsights = async () => {
+      try {
+        const res = await fetch("/api/insight", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ weatherData: weatherCards }),
+        });
+
+
+        const contentType = res.headers.get("content-type") || "";
+        const isJson = contentType.includes("application/json");
+
+        if (!isJson) {
+          const errorText = await res.text();
+          console.error("❌ Non-JSON response from /api/insights:", errorText);
+          throw new Error("Server returned an invalid response.");
+        }
+
+        const data = await res.json();
+        console.log(data.summary)
+
+        if (res.ok) {
+          if (data.summary) setInsights(data.summary);
+        } else {
+          console.error("❌ API returned error:", data.error);
+          throw new Error(data.error || "Failed to fetch insights.");
+        }
+      } catch (err: any) {
+        console.error("Failed to fetch insights:", err.message || err);
+      }
+    };
+
+    fetchInsights();
+  }, [weatherCards]);
+
+  useEffect
+
+
+
 
   const getRiskColor = (risk: WeatherRisk) => {
     switch (risk.level) {
@@ -280,18 +324,35 @@ const Dashboard = () => {
                     <div>
                       <Card className="shadow-2xs">
                         <CardTitle className="flex justify-end flex-col space-y-5">
-                        <h1 className="text-2xl text-center">
-                          Expected {card.type}
-                        </h1>
-                        <p className="text-2xl text-bold font-extrabold text-center">
-                          {card.averageValue}
-                        </p>
-                      </CardTitle>
+                          <h1 className="text-2xl text-center">
+                            Expected {card.type}
+                          </h1>
+                          <p className="text-2xl text-bold font-extrabold text-center">
+                            {card.averageValue}
+                          </p>
+                        </CardTitle>
                       </Card>
                     </div>
                   </div>
                 </CardContent>
               </Card>
+
+              {insights && (
+                <Card className="mt-6 bg-primary/10 border border-primary/20">
+                  <CardHeader>
+                    <CardTitle>Key Insights & Suggestions</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <ul className="list-disc list-inside space-y-2 text-sm text-foreground">
+                      {String(insights)
+                        .split("\n")
+                        .map((line, idx) =>
+                          line.trim() ? <li key={idx}>{line}</li> : null
+                        )}
+                    </ul>
+                  </CardContent>
+                </Card>
+              )}
             </TabsContent>
           ))}
         </Tabs>
