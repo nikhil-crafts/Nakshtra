@@ -16,6 +16,7 @@ export interface WeatherRisk {
   level: 'low' | 'medium' | 'high'| 'very high';
   value: number;
   description: string;
+  type?: string;
 }
 
 export interface WeatherCard {
@@ -24,7 +25,7 @@ export interface WeatherCard {
   title: string;
   icon: string;
   averageValue: string;
-  extremeRisk: WeatherRisk;
+  extremeRisk: WeatherRisk | WeatherRisk[];
 }
 
 export interface UserPreferences {
@@ -32,5 +33,4 @@ export interface UserPreferences {
   minComfortableTemp: number;
   maxWindTolerance: number;
   rainTolerance: number;
-  snowTolerance: number;
 }

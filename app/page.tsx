@@ -24,8 +24,6 @@ import type { EventData } from "@/types/weather";
 import { useRouter } from "next/navigation";
 import MapPicker from "@/components/MapPicker";
 
-
-
 interface Thresholds {
   hot?: number;
   cold?: number;
@@ -52,15 +50,15 @@ const Landing = () => {
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [thresholds, setThresholds] = useState<Thresholds>({});
   const [userThresholds, setUserThresholds] = useState<Thresholds | null>(null);
-  const [submit, setSubmit] = useState(false)
+  const [submit, setSubmit] = useState(false);
   const router = useRouter();
 
-  const libraries: ("places")[] = ["places"];
+  const libraries: "places"[] = ["places"];
 
   const { isLoaded } = useLoadScript({
-  googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY!,
-  libraries,
-});
+    googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY!,
+    libraries,
+  });
 
   const inputRef = useRef<HTMLInputElement | null>(null);
   const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
@@ -68,10 +66,13 @@ const Landing = () => {
   useEffect(() => {
     if (!inputRef.current || !window.google) return;
 
-    autocompleteRef.current = new google.maps.places.Autocomplete(inputRef.current, {
-      fields: ["geometry", "formatted_address"],
-      types:["geocode"]
-    });
+    autocompleteRef.current = new google.maps.places.Autocomplete(
+      inputRef.current,
+      {
+        fields: ["geometry", "formatted_address"],
+        types: ["geocode"],
+      }
+    );
 
     autocompleteRef.current.addListener("place_changed", () => {
       const place = autocompleteRef.current!.getPlace();
@@ -79,7 +80,12 @@ const Landing = () => {
 
       const lat = place.geometry.location.lat();
       const lng = place.geometry.location.lng();
-      setEventData({ ...eventData, location: place.formatted_address!, lat, lng });
+      setEventData({
+        ...eventData,
+        location: place.formatted_address!,
+        lat,
+        lng,
+      });
     });
   }, [isLoaded]);
   // Load saved thresholds (if user is logged in)
@@ -102,43 +108,54 @@ const Landing = () => {
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
-    setSubmit(true)
     e.preventDefault();
+    setSubmit(true);
+
     if (!eventData.location || !eventData.date) return;
 
-    // Determine which thresholds to use
-    const thresholdsToUse = userThresholds || thresholds || globalThresholds;
-
-    // Save thresholds temporarily to sessionStorage
-    sessionStorage.setItem("thresholds", JSON.stringify(thresholdsToUse));
-
-    const params = new URLSearchParams({
-      date_of_trip: format(eventData.date!, "yyyyMMdd"),
-      lat: (eventData.lat || "").toString(),
-      lon: (eventData.lng || "").toString(),
-      hot: thresholdsToUse.hot?.toString() || "",
-      cold: thresholdsToUse.cold?.toString() || "",
-      windy: thresholdsToUse.windy?.toString() || "",
-      rain: thresholdsToUse.rain?.toString() || "",
-    });
-
     try {
-      const res = await fetch(`http://localhost:5000/weather_risk?${params}`);
+      // Base query params
+      const params = new URLSearchParams({
+        lat: (eventData.lat ?? "").toString(),
+        lon: (eventData.lng ?? "").toString(),
+        date_of_trip: format(eventData.date!, "yyyyMMdd"),
+      });
+
+      // Include user preferences if available
+      console.log(sessionStorage)
+      const storedPrefs = sessionStorage.getItem("userPreferences");
+      if (storedPrefs) {
+        const prefs = JSON.parse(storedPrefs);
+        if (prefs.maxComfortableTemp !== undefined)
+          params.append("hot", prefs.maxComfortableTemp.toString());
+        if (prefs.minComfortableTemp !== undefined)
+          params.append("cold", prefs.minComfortableTemp.toString());
+        if (prefs.maxWindTolerance !== undefined)
+          params.append("windy", prefs.maxWindTolerance.toString());
+        if (prefs.rainTolerance !== undefined)
+          params.append("rain", prefs.rainTolerance.toString());
+      }
+
+      // Call Next.js API route
+      const res = await fetch(`/api/weather?${params.toString()}`);
       const data = await res.json();
 
-      // Store event data for dashboard
+      if (!res.ok)
+        throw new Error(data.error || "Failed to fetch weather risk");
+
+      console.log("✅ Weather Risk Response:", data);
+
+      // Save API response for dashboard
+      setEventData((prev) => ({ ...prev, apiResponse: data }));
       sessionStorage.setItem(
         "eventData",
-        JSON.stringify({
-          ...eventData,
-          thresholds: thresholdsToUse,
-          apiResponse: data,
-        })
+        JSON.stringify({ ...eventData, apiResponse: data })
       );
 
+      // Navigate to dashboard
       router.push("/dashboard");
     } catch (err) {
-      console.error("Error fetching weather:", err);
+      console.error("❌ Fetch Error:", err);
     }
   };
 
@@ -175,9 +192,10 @@ const Landing = () => {
                     placeholder="Search location..."
                     className="w-full h-12 px-4 border rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                     value={eventData.location || ""}
-                    onChange={(e) => setEventData({ ...eventData, location: e.target.value })}
+                    onChange={(e) =>
+                      setEventData({ ...eventData, location: e.target.value })
+                    }
                   />
-
                 </div>
                 {/* Date Picker */}
                 <div className="space-y-2">

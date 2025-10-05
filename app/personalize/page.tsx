@@ -21,7 +21,6 @@ const Personalize = () => {
     minComfortableTemp: 15,
     maxWindTolerance: 25,
     rainTolerance: 20,
-    snowTolerance: 10,
   });
   const navigate = useRouter();
 

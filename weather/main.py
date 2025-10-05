@@ -118,7 +118,7 @@ def weather_risk():
         "rain": user_rain if user_rain is not None else 10
     }
 
-    PARAMETERS = ["T2M", "T2M_MAX", "T2M_MIN", "WS2M", "PRECTOT", "RH2M"]
+    PARAMETERS = ["T2M", "T2M_MAX", "T2M_MIN", "WS2M", "PRECTOTCORR", "RH2M"]
 
     try:
         data, event_dt = fetch_weather_data(date_of_trip, [lat, lon], PARAMETERS)
