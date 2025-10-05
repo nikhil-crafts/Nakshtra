@@ -122,7 +122,6 @@ const Dashboard = () => {
           body: JSON.stringify({ weatherData: weatherCards }),
         });
 
-
         const contentType = res.headers.get("content-type") || "";
         const isJson = contentType.includes("application/json");
 
@@ -148,10 +147,7 @@ const Dashboard = () => {
     fetchInsights();
   }, [weatherCards]);
 
-  useEffect
-
-
-
+  useEffect;
 
   const getRiskColor = (risk: WeatherRisk) => {
     switch (risk.level) {
@@ -188,9 +184,26 @@ const Dashboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-accent/20">
+    <div className="min-h-screen ">
+      <div className="fixed -z-10">
+        <img
+          src="/earth.png"
+          alt="Background"
+          className="w-full h-full object-fill"
+        />
+      </div>
       {/* Header */}
-      <div className="bg-white/50 backdrop-blur-sm border-b border-border/50 sticky top-0 z-50">
+      <div
+        className="
+          sticky top-0 z-50
+          w-screen
+          bg-white/10
+          shadow-[0_8px_32px_0_rgba(31,38,135,0.37)]
+          hover:bg-white/20
+          transition-all duration-500
+          backdrop-blur-2xl
+          "
+      >
         <div className="container max-w-4xl mx-auto px-4 py-4 flex items-center justify-between">
           <Button
             variant="ghost"
@@ -202,7 +215,7 @@ const Dashboard = () => {
             Back
           </Button>
           <div className="text-center flex-1 mx-4">
-            <h1 className="text-xl font-bold text-foreground">
+            <h1 className="text-xl text-white font-bold ">
               Weather Risk Dashboard
             </h1>
             <div className="flex items-center justify-center gap-4 text-sm text-muted-foreground mt-1">
@@ -228,7 +241,7 @@ const Dashboard = () => {
         </div>
       </div>
 
-      <div className="container max-w-4xl mx-auto px-4 py-6">
+      <div className="container max-w-4xl  mx-auto px-4 py-6">
         {isPersonalized && (
           <div className="mb-6 text-center">
             <Button
@@ -240,8 +253,12 @@ const Dashboard = () => {
           </div>
         )}
 
-        <Tabs defaultValue="rain" className="w-full">
-          <TabsList className="grid w-full grid-cols-3 mb-6 h-auto p-1 bg-card rounded-xl">
+        <Tabs defaultValue="rain" className="w-full ">
+          <TabsList className="grid w-full grid-cols-3 mb-6 h-auto p-1  rounded-xl  bg-white/50
+          shadow-[0_8px_32px_0_rgba(31,38,135,0.37)]
+          hover:bg-white/60
+          transition-all duration-500
+          backdrop-blur-2xl ">
             {weatherCards.map((card) => (
               <TabsTrigger
                 key={card.id}
@@ -258,16 +275,18 @@ const Dashboard = () => {
 
           {weatherCards.map((card) => (
             <TabsContent key={card.id} value={card.id} className="mt-0">
-              <Card className="weather-card">
+              <Card className="weather-card  bg-white/5
+          shadow-[0_8px_32px_0_rgba(31,38,135,0.37)]
+          backdrop-blur-2xl">
                 <CardHeader className="pb-4">
                   <CardTitle className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center text-white gap-3">
                       {getWeatherIcon(card.type)}
-                      <span className="text-2xl">{card.title}</span>
+                      <span className="text-2xl text-white">{card.title}</span>
                     </div>
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-6">
+                <CardContent className="space-y-6 text-white">
                   <div className="grid grid-cols-2 gap-10">
                     <div className="flex flex-col items-center">
                       {Array.isArray(card.extremeRisk) ? (
@@ -292,7 +311,7 @@ const Dashboard = () => {
                               >
                                 {risk.level.toUpperCase()}
                               </Button>
-                              <p className="text-sm text-muted-foreground text-center">
+                              <p className="text-sm text-white font-bold text-center">
                                 {risk.description}
                               </p>
                             </div>
@@ -300,7 +319,7 @@ const Dashboard = () => {
                         </div>
                       ) : (
                         // Single risk (rain, wind, etc.)
-                        <div className="flex flex-col items-center space-y-2">
+                        <div className="flex flex-col  items-center space-y-2">
                           <CircularProgress
                             progress={card.extremeRisk.value}
                             size={150}
@@ -314,7 +333,7 @@ const Dashboard = () => {
                           >
                             {card.extremeRisk.level.toUpperCase()}
                           </Button>
-                          <p className="text-sm text-center font-bold">
+                          <p className="text-sm text-center text-white font-bold">
                             {card.extremeRisk.description}
                           </p>
                         </div>
@@ -337,12 +356,14 @@ const Dashboard = () => {
               </Card>
 
               {insights && (
-                <Card className="mt-6 bg-primary/10 border border-primary/20">
+                <Card className="mt-10  bg-white/5
+          shadow-[0_8px_32px_0_rgba(31,38,135,0.37)]
+          backdrop-blur-2xl">
                   <CardHeader>
                     <CardTitle>Key Insights & Suggestions</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <ul className="list-disc list-inside space-y-2 text-sm text-foreground">
+                    <ul className="list-disc list-inside  space-y-2 text-md font-semibold text-foreground ">
                       {String(insights)
                         .split("\n")
                         .map((line, idx) =>

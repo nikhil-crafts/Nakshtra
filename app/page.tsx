@@ -122,7 +122,7 @@ const Landing = () => {
       });
 
       // Include user preferences if available
-      console.log(sessionStorage)
+      console.log(sessionStorage);
       const storedPrefs = sessionStorage.getItem("userPreferences");
       if (storedPrefs) {
         const prefs = JSON.parse(storedPrefs);
@@ -170,12 +170,31 @@ const Landing = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4">
-      <div className="w-full max-w-6xl grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-25">
+      <div className="absolute inset-0 -z-10">
+        <img
+          src="/asman.jpg"
+          alt="Background"
+          className="w-full h-full object-cover"
+        />
+      </div>
+      <div className="w-full max-w-6xl grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-25 ">
         <div className="space-y-8 bg-transparent mt-11">
-          <Card className="weather-card border-0 shadow-2xl h-full backdrop-blur-3xl ">
+          <Card
+            className="
+            border border-white/20
+            h-full
+            backdrop-blur-2xl
+            rounded-2xl
+            shadow-[0_8px_32px_0_rgba(31,38,135,0.37)]
+            hover:bg-white/20
+            transition-all duration-500
+            bg-white/10
+            text-white
+            "
+          >
             <CardHeader className="text-center pb-6">
-              <CardTitle className="text-3xl">Event Weather Risk</CardTitle>
-              <CardDescription>
+              <CardTitle className="text-3xl text-white">Event Weather Risk</CardTitle>
+              <CardDescription className="text-white">
                 Get weather risk insights for your upcoming event
               </CardDescription>
             </CardHeader>
@@ -183,14 +202,14 @@ const Landing = () => {
               <form onSubmit={handleSubmit} className="space-y-10">
                 {/* Location Input */}
                 <div className="space-y-3">
-                  <label htmlFor="location" className="text-sm font-medium">
+                  <label htmlFor="location" className="text-sm  font-medium">
                     Event Location
                   </label>
                   <input
                     ref={inputRef}
                     type="text"
                     placeholder="Search location..."
-                    className="w-full h-12 px-4 border rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full h-12 px-4 border bg-white text-black rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                     value={eventData.location || ""}
                     onChange={(e) =>
                       setEventData({ ...eventData, location: e.target.value })
@@ -208,8 +227,8 @@ const Landing = () => {
                       <Button
                         variant="outline"
                         className={cn(
-                          "w-full h-12 justify-start text-left font-normal rounded-xl border-border/50 hover:border-primary",
-                          !eventData.date && "text-muted-foreground"
+                          "w-full h-12 justify-start text-left font-normal text-black rounded-xl border-border/50 hover:border-primary",
+                          !eventData.date && "text-black"
                         )}
                       >
                         <CalendarIcon className="mr-3 h-4 w-4" />
