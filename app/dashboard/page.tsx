@@ -133,7 +133,6 @@ const Dashboard = () => {
         }
 
         const data = await res.json();
-        console.log(data.summary)
 
         if (res.ok) {
           if (data.summary) setInsights(data.summary);
